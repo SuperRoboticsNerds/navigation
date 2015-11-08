@@ -5,6 +5,7 @@
 #include "ras_arduino_msgs/Encoders.h"
 #include "ras_arduino_msgs/ADConverter.h"
 #include "geometry_msgs/Twist.h"
+#include "localization/Distance_message.h"
 #include <sstream>
 #include <math.h>
 #include <cmath>
@@ -21,10 +22,10 @@ const double LOOP_RATE = 10;
 const double alpha = 0.05;
 const double PI = 3.14;
 const double DIST_THRESHOLD = 0.10;
-const double ALIGN_DIST_THRESHOLD = 0.08;
-const double MIN_DIST_FRONT = 0.30;
+const double ALIGN_DIST_THRESHOLD = 0.03;
+const double MIN_DIST_FRONT = 0.90;
 double theta = 0.0;
-const double alpha1 = 1.1;
+const double alpha1 = 0.4;
 
 
 class WallFollowingControllerNode
@@ -44,9 +45,11 @@ public:
         n = ros::NodeHandle("~");
         twist_pub_ = n.advertise<geometry_msgs::Twist>("/motor_controller/twist", 1000);
         dist_sub_adc = n.subscribe("/arduino/adc", 1, &WallFollowingControllerNode::distance_sensor_function, this);
-        // dist_sub_ = n.subscribe("/ir_measurements", 1, &WallFollowingControllerNode::dist_sensor_values, this);
+        dist_sub_ir = n.subscribe("/ir_measurements", 1, &WallFollowingControllerNode::dist_sensor_values, this);
         encoders_sub_ = n.subscribe("arduino/encoders", 1, &WallFollowingControllerNode::encoders_feedback, this);
-
+        wall_following = true;
+        align_wall = false;
+        turn_flag = false;
     }
 
     ~WallFollowingControllerNode()
@@ -65,14 +68,14 @@ public:
     }
 
 
-    // void dist_sensor_values(const localization::Distance_msgs& dist_msg){
-    //     front_left = dist_msg.d1;
-    //     back_left = dist_msg.d2;
-    //     front_right = dist_msg.d3;
-    //     back_right = dist_msg.d4;
-    //     front_wall_1 = dist_msg.d5;
-    //     front_wall_2 = dist_msg.d6;
-    // }
+     void dist_sensor_values(const localization::Distance_message& dist_msg){
+         front_left = dist_msg.d1;
+         back_left = dist_msg.d2;
+         front_right = dist_msg.d3;
+         back_right = dist_msg.d4;
+         front_wall_1 = dist_msg.d5;
+         front_wall_2 = dist_msg.d6;
+     }
 
 
     void encoders_feedback(const ras_arduino_msgs::Encoders& msg){
@@ -104,9 +107,13 @@ public:
         left_right_diff = left_dist - right_dist ;
         delta_left = front_left - back_left;
         delta_right = front_right - back_right; 
-
+	    front = (front_wall_1 + front_wall_2) / 2;
+        align_wall = false;
+        wall_following = true;
 
         if(align_wall){
+
+            // ROS_INFO("huuuuu");
             // if( abs(left_right_diff) > DIST_THRESHOLD ){
             //     align_wall = true;
 
@@ -126,8 +133,11 @@ public:
             //     linear_vel = 0.0;
             //     angular_vel = 0.0;
             // }
+
+
             if(left_dist <= right_dist){
                 if(abs(delta_left) > ALIGN_DIST_THRESHOLD){
+                    std::cout << "ALigning left";
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
@@ -140,10 +150,12 @@ public:
                 }                
             }else{
                 if(abs(delta_right) > ALIGN_DIST_THRESHOLD){
+                    std::cout << "ALigning right";
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
-                    angular_vel = alpha1 * delta_right / abs(delta_right);
+                    // angular_vel = alpha1 * delta_right / abs(delta_right);
+                    angular_vel = -0.3;
                 }else{
                     align_wall = false;
                     wall_following = true;
@@ -160,7 +172,8 @@ public:
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
-                    angular_vel = alpha1 * delta_left / abs(delta_left);
+                    //angular_vel = alpha1 * delta_left / abs(delta_left);
+                    angular_vel = 0.30;
                 }else if(front < MIN_DIST_FRONT) {
                     align_wall = false;
                     wall_following = false;
@@ -168,6 +181,7 @@ public:
                     angular_vel = 0.0;
                     stop_flag = true;
                 } else{
+                    std::cout << "here 1";
                     wall_following = true;
                     align_wall = false;
                     linear_vel = 0.20;
@@ -183,10 +197,11 @@ public:
                 }else if( front < MIN_DIST_FRONT){
                     align_wall = false;
                     wall_following = true;
-                    linear_vel = 0.20;
+                    linear_vel = 0.00;
                     angular_vel = 0.0;
                     stop_flag = true;
                 } else{
+                    std::cout << "here2";
                     wall_following = false;
                     align_wall = true;
                     linear_vel = 0.20;
@@ -216,37 +231,11 @@ public:
 
         }
 
+        twist_msg.angular.z = angular_vel;
+        twist_msg.linear.x = linear_vel;
 
         twist_pub_.publish(twist_msg);
 
-
-        // if(front_dist < 200) //initial value to be calibrated, it nothing infront is detected go forward and follow the right wall
-        // {                                                                                    // and same distance is kept fixed
-        //     twist_msg.linear.x=0.2;
-        //     twist_msg.angular.z = 0.0;
-        // }
-
-
-        // else if(front < 300) //if a front wall appeared
-        // {
-        //     if(upper_left > upper_right) // and the right turn is blocked
-        //     {
-        //         while(front > 300) // proceed with steering as long as the forward turn is not cleared
-        //         {
-        //             twist_msg.linear.x=0.0;
-        //             twist_msg.angular.z = 0.2;
-        //         }
-        //     }
-        //     if (upper_left < upper_right)
-        //     {
-        //         while(front > 300) // proceed with steering as long as the forward turn is not cleared
-        //         {
-        //             twist_msg.linear.x=0.0;
-        //             twist_msg.angular.z = -0.2; //negative value to turn in the other direction
-        //         }
-        //     }
-
-        // }
     
     }
 
@@ -261,7 +250,7 @@ public:
         int turn_direction;
         turn_direction = left_dist > right_dist ? 1 : -1;
         linear_vel = 0.0;
-        angular_vel = turn_direction * 0.30;
+        angular_vel = turn_direction * 0.50;
 
         // use erics code to integrate odometry here ..
 
@@ -270,7 +259,7 @@ public:
         double theta_diff = dt * estimated_angular_vel;
         theta = theta + theta_diff;
         last_time = current_time;
-        if (abs(theta) >= PI/4){
+        if (abs(theta) >= 2.0*PI){
             theta = 0.0;
             angular_vel = 0.0;
             linear_vel = 0.0;
@@ -290,7 +279,6 @@ private:
     double back_left;
     double front_right;
     double back_right;
-    double front;
     double left_dist;
     double right_dist;
     double left_right_diff;
@@ -318,6 +306,9 @@ private:
     ros::Time last_time;
     double delta_left;
     double delta_right;
+    double front_wall_1;
+    double front_wall_2;
+    double front;
 
 };
 
