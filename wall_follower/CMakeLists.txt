@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(navigation)
+project(wall_follower)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -115,11 +115,11 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-#add_executable(wall_follower  src/wall_follower.cpp)
-#target_link_libraries(wall_follower  ${catkin_LIBRARIES})
+add_executable(wall_follower  src/wall_follower.cpp)
+target_link_libraries(wall_follower  ${catkin_LIBRARIES})
 
-add_executable(wallE  src/wallE.cpp)
-target_link_libraries(wallE  ${catkin_LIBRARIES})
+#add_executable(wallE  src/wallE.cpp)
+#target_link_libraries(wallE  ${catkin_LIBRARIES})
 
 
 ## Declare a C++ library
