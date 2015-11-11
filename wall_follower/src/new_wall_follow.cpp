@@ -22,11 +22,11 @@ const double LOOP_RATE = 10;
 const double alpha = 0.05;
 const double PI = 3.1415;
 const double ALIGN_DIST_THRESHOLD = 0.025;
-const double MIN_DIST_FRONT = 0.350;
+const double MIN_DIST_FRONT = 0.260;
 const double alpha1 = 0.2;
-const double alpha2 = 2.4;
+const double alpha2 = 2.3;
 const double alpha3 = 0.3;
-const double alpha4 = 1.9;
+const double alpha4 = 1.8;
 const double beta = 0.20;
 
 double theta = 0.0;
@@ -151,10 +151,16 @@ public:
                         stop_flag = true;
                     } else{
 
-                        ROS_INFO("%s", "Following LEFT wall..");
-                        wall_following = true;
-                        linear_vel = 0.15;
-                        angular_vel = alpha2 * (left_dist - right_dist); //PID Controller needed
+                        if(fabs(left_dist - right_dist) < 0.11){
+                            ROS_INFO("%s", "Following LEFT wall..");
+                            wall_following = true;
+                            linear_vel = 0.15;
+                            angular_vel = alpha2 * (left_dist - right_dist); //PID Controller needed
+                        }else {
+                            wall_following = true;
+                            linear_vel = 0.15;
+                            angular_vel = 0; //PID Controller needed 
+                        }
                     }
 
                 }else
@@ -172,10 +178,17 @@ public:
                         wall_following = false;
                         stop_flag = true;
                     } else{
-                        ROS_INFO("%s", "Following RIGHT wal..");
-                        wall_following = true;
-                        linear_vel = 0.15;
-                        angular_vel = -alpha4 * (right_dist - left_dist); //PID Controller needed
+
+                        if(fabs(left_dist - right_dist) < 0.28){
+                            ROS_INFO("%s", "Following LEFT wall..");
+                            wall_following = true;
+                            linear_vel = 0.15;
+                            angular_vel = alpha4 * (left_dist - right_dist); //PID Controller needed
+                        }else {
+                            wall_following = true;
+                            linear_vel = 0.15;
+                            angular_vel = 0; //PID Controller needed 
+                        }
 
                     }
                 }
@@ -188,8 +201,8 @@ public:
                     stopRobo();
                 }else
                 {
-                    stop_flag = true;
-                    // turn_flag = true;
+                    stop_flag = false;
+                    turn_flag = true;
                 }
 
             } 
@@ -276,7 +289,12 @@ public:
             //     } 
 
             //     angular_vel = alpha3 * (right_dist - left_dist);
-            // 
+            // }
+
+
+
+
+
 
 
         }

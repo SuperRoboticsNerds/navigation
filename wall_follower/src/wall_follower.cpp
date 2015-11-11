@@ -22,10 +22,10 @@ const double LOOP_RATE = 10;
 const double alpha = 0.05;
 const double PI = 3.14;
 const double DIST_THRESHOLD = 0.10;
-const double ALIGN_DIST_THRESHOLD = 0.03;
-const double MIN_DIST_FRONT = 0.90;
+const double ALIGN_DIST_THRESHOLD = 0.07;
+const double MIN_DIST_FRONT = 0.40;
 double theta = 0.0;
-const double alpha1 = 0.4;
+const double alpha1 = 0.2;
 
 
 class WallFollowingControllerNode
@@ -99,19 +99,22 @@ public:
 
     void run(){
 
-        left_distance = (front_left + back_left ) /2 ;
-        right_distance = (front_right +  back_right) / 2;
+        left_distance = (front_left + back_left ) /2.0 ;
+        right_distance = (front_right +  back_right) / 2.0;
 
-        left_dist = std::min(front_left, back_left);
-        right_dist = std::min(front_right, back_right);
+        left_dist = std::max(front_left, back_left);
+        right_dist = std::max(front_right, back_right);
         left_right_diff = left_dist - right_dist ;
         delta_left = front_left - back_left;
         delta_right = front_right - back_right; 
-	    front = (front_wall_1 + front_wall_2) / 2;
-        align_wall = false;
-        wall_following = true;
+        front = (front_wall_1 + front_wall_2) / 2.0;
+        // align_wall = false;
+        // wall_following = true;
 
         if(align_wall){
+
+            ROS_INFO("%f, %f", delta_left, delta_right);
+            // ROS_INFO("%f, %f", left_distance, right_distance);
 
             // ROS_INFO("huuuuu");
             // if( abs(left_right_diff) > DIST_THRESHOLD ){
@@ -135,28 +138,33 @@ public:
             // }
 
 
-            if(left_dist <= right_dist){
-                if(abs(delta_left) > ALIGN_DIST_THRESHOLD){
+            if(left_dist <= right_dist){ //allign with left wall
+                if(delta_left<0.0) delta_left*-1.0;
+                if((delta_left) >= ALIGN_DIST_THRESHOLD){
                     std::cout << "ALigning left";
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
-                    angular_vel = alpha1 * delta_left / abs(delta_left);
+                    //angular_vel = alpha1 * delta_left / abs(delta_left);
+                    angular_vel = 0.12;
                 } else{
+                    ROS_INFO("%s", "will follow left wall now..");
                     align_wall = false;
                     wall_following = true;
                     angular_vel = 0.0;
                     linear_vel = 0.0;
                 }                
             }else{
-                if(abs(delta_right) > ALIGN_DIST_THRESHOLD){
-                    std::cout << "ALigning right";
+                if (delta_right<0.0) delta_right*-1.0;
+                if((delta_right) >= ALIGN_DIST_THRESHOLD){
+                    std::cout << "Aligning right";
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
-                    // angular_vel = alpha1 * delta_right / abs(delta_right);
-                    angular_vel = -0.3;
+                    //angular_vel = alpha1 * delta_right / abs(delta_right);
+                    angular_vel = -0.12;
                 }else{
+                    ROS_INFO("%s", "will follow right wall now..");
                     align_wall = false;
                     wall_following = true;
                     linear_vel = 0.0;
@@ -167,21 +175,25 @@ public:
 
         } else if(wall_following){
 
+            ROS_INFO("%s", "hii..");
             if(left_dist <= right_dist){
-                if (abs(delta_left) > ALIGN_DIST_THRESHOLD){
+                if (delta_left<0.0) delta_left*-1.0;
+                if (delta_left >= ALIGN_DIST_THRESHOLD){
+                    ROS_INFO("%s", "will allign to the left now..");
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
                     //angular_vel = alpha1 * delta_left / abs(delta_left);
-                    angular_vel = 0.30;
+                    angular_vel = 0.20;
                 }else if(front < MIN_DIST_FRONT) {
+                    std::cout << "here 1";
                     align_wall = false;
                     wall_following = false;
                     linear_vel = 0.0;
                     angular_vel = 0.0;
                     stop_flag = true;
                 } else{
-                    std::cout << "here 1";
+                    std::cout << "here 2";
                     wall_following = true;
                     align_wall = false;
                     linear_vel = 0.20;
@@ -189,19 +201,23 @@ public:
                 }
 
             }else{
-                if(abs(delta_right) > ALIGN_DIST_THRESHOLD){
+                if (delta_right<0.0) delta_right*-1.0;
+                if((delta_right) >= ALIGN_DIST_THRESHOLD){
+                    ROS_INFO("%s", "will allign to the right now..");
                     align_wall = true;
                     wall_following = false;
                     linear_vel = 0.0;
-                    angular_vel = alpha1 * delta_right / abs(delta_right);
+                    // angular_vel = alpha1 * delta_right / abs(delta_right);
+                    angular_vel = 0.30;
                 }else if( front < MIN_DIST_FRONT){
+                    std::cout << "here 3";
                     align_wall = false;
                     wall_following = true;
                     linear_vel = 0.00;
                     angular_vel = 0.0;
                     stop_flag = true;
                 } else{
-                    std::cout << "here2";
+                    std::cout << "here 4";
                     wall_following = false;
                     align_wall = true;
                     linear_vel = 0.20;

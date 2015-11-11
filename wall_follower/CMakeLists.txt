@@ -64,10 +64,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs  # Or other packages containing msgs
- )
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -118,8 +118,12 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 add_executable(wall_follower  src/wall_follower.cpp)
 target_link_libraries(wall_follower  ${catkin_LIBRARIES})
 
-#add_executable(wallE  src/wallE.cpp)
-#target_link_libraries(wallE  ${catkin_LIBRARIES})
+add_executable(wallE  src/wallE.cpp)
+target_link_libraries(wallE  ${catkin_LIBRARIES})
+
+add_executable(new_wall_follow  src/new_wall_follow.cpp)
+target_link_libraries(new_wall_follow  ${catkin_LIBRARIES})
+
 
 
 ## Declare a C++ library
