@@ -115,8 +115,8 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-#add_executable(wall_follower  src/wall_follower.cpp)
-#target_link_libraries(wall_follower  ${catkin_LIBRARIES})
+add_executable(test_imu  src/test_imu.cpp)
+target_link_libraries(test_imu  ${catkin_LIBRARIES})
 
 #add_executable(wallE  src/wallE.cpp)
 #target_link_libraries(wallE  ${catkin_LIBRARIES})
